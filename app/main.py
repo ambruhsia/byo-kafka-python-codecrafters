@@ -69,10 +69,12 @@ import socket
 from dataclasses import dataclass
 from enum import Enum, unique
 
+
 @unique
 class ErrorCode(Enum):
     NONE = 0
     UNSUPPORTED_VERSION = 35
+
 
 @dataclass
 class KafkaRequest:
@@ -88,6 +90,7 @@ class KafkaRequest:
             api_version=int.from_bytes(data[6:8]),
             correlation_id=int.from_bytes(data[8:12]),
         )
+
 
 def make_response(request: KafkaRequest):
     response_header = request.correlation_id.to_bytes(4)
@@ -113,7 +116,7 @@ def make_response(request: KafkaRequest):
         for api_key, min_version, max_version in api_entries
     )
 
-    num_api_keys = len(api_entries)  # Should be 2
+    num_api_keys = len(api_entries)  # This should be 2
     throttle_time_ms = 0
 
     response_body = (
@@ -126,12 +129,14 @@ def make_response(request: KafkaRequest):
     response_length = len(response_header) + len(response_body)
     return int(response_length).to_bytes(4) + response_header + response_body
 
+
 def main():
     server = socket.create_server(("localhost", 9092), reuse_port=True)
     client, _ = server.accept()
     request = KafkaRequest.from_client(client)
     print(request)
     client.sendall(make_response(request))
+
 
 if __name__ == "__main__":
     main()
