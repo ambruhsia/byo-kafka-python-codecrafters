@@ -119,6 +119,7 @@ def make_response(request: KafkaRequest):
     num_api_keys = len(api_entries)  # This should be 2
     throttle_time_ms = 0
 
+    # Building the response body
     response_body = (
         error_code.value.to_bytes(2) +          # Error code
         num_api_keys.to_bytes(2) +              # Number of API version entries
