@@ -1,28 +1,31 @@
 import socket  # noqa: F401
 import threading
-def response_api_key_75(id, cursor, array_length, length, topic_name):
-    tag_buffer = b"\x00"
-    response_header = id.to_bytes(4, byteorder="big") + tag_buffer
-    error_code = int(3).to_bytes(2, byteorder="big")
+def response_api_key_75(correlation_id, cursor, array_length, topic_name):
+    tag_buffer = b"\x00"  # Placeholder for tags
+    response_header = correlation_id.to_bytes(4, byteorder="big")
+    error_code = int(3).to_bytes(2, byteorder="big")  # UNKNOWN_TOPIC_OR_PARTITION error code
     throttle_time_ms = int(0).to_bytes(4, byteorder="big")
-    is_internal = int(0).to_bytes(1, byteorder="big")
-    topic_authorized_operations = b"\x00\x00\x0d\xf8"
-    topic_id = int(0).to_bytes(16, byteorder="big")
-    partition_array = b"\x01"
+    
+    # Set topic_name as a COMPACT_STRING, which includes its length as the first byte
+    topic_name_length = len(topic_name).to_bytes(1, byteorder="big")  # Length of the topic name
+    topic_id = int(0).to_bytes(16, byteorder="big")  # Topic ID as 00000000-0000-0000-0000-000000000000
+    partition_count = int(0).to_bytes(1, byteorder="big")  # No partitions for unknown topic
+
+    # Construct the response body
     response_body = (
-        throttle_time_ms
-        + int(array_length).to_bytes(1, byteorder="big")
-        + error_code
-        + int(length).to_bytes(1, byteorder="big")
-        + topic_name
-        + topic_id
-        + is_internal
-        + partition_array
-        + topic_authorized_operations
-        + tag_buffer
-        + cursor
-        + tag_buffer
+        throttle_time_ms +
+        error_code +
+        topic_name_length +  # Length of the topic name
+        topic_name +         # The topic name itself
+        topic_id +          # Topic ID
+        partition_count +    # Number of partitions
+        cursor +             # Next cursor (if applicable)
+        tag_buffer           # Ending tag buffer
     )
+
+    total_len = len(response_header) + len(response_body)
+    return int(total_len).to_bytes(4, byteorder="big") + response_header + response_body
+
     total_len = len(response_header) + len(response_body)
     return int(total_len).to_bytes(4, byteorder="big") + response_header + response_body
 def create_msg(id, api_key: int, error_code: int = 0):
